@@ -256,6 +256,22 @@ body.hard .step.done{background:#2f5a2a}
 .mtime.hurry{background:var(--red);color:#fff}
 body.hard .mtime{background:#3a2d47;color:var(--text)}
 body.hard .mtime.hurry{background:var(--red);color:#fff}
+.gtag{font-family:var(--f-display);font-size:12px;border-radius:999px;padding:0 8px;border:2px solid var(--ink)}
+.gtag.m{background:#cfe6ff}.gtag.f{background:#ffd6e6}.gtag.pj{background:#e8ddff}
+.urgent{position:absolute;left:50%;top:46px;transform:translateX(-50%);z-index:6;display:flex;align-items:center;gap:10px;
+  font-family:var(--f-display);font-size:clamp(15px,2.2vw,20px);color:#fff;background:#7a3cff;border:3px solid var(--ink);border-radius:14px;padding:6px 8px 6px 14px;box-shadow:0 4px 0 var(--ink);white-space:nowrap;max-width:calc(100% - 24px)}
+.urgent .btn{font-size:16px;padding:4px 12px;background:var(--gold);color:var(--ink)}
+.urgent .left{font-family:var(--f-pixel);font-size:11px;opacity:.85}
+@media (prefers-reduced-motion:no-preference){.urgent{animation:ringShake .6s ease-in-out infinite}}
+@keyframes ringShake{0%,100%{transform:translateX(-50%) rotate(0)}10%{transform:translateX(-50%) rotate(-2deg)}20%{transform:translateX(-50%) rotate(2deg)}30%{transform:translateX(-50%) rotate(-1deg)}40%{transform:translateX(-50%) rotate(0)}}
+.ubar{height:10px;border:2px solid var(--ink);border-radius:999px;overflow:hidden;background:#fff}
+.ubar i{display:block;height:100%;background:#7a3cff;transition:width .1s linear}
+.uchoices{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px}
+.uchoices .btn{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:22px;padding:8px}
+.uchoices .btn.right{background:var(--ok);color:#fff}.uchoices .btn.wrongc{background:var(--red);color:#fff}
+.ucaller{display:flex;gap:10px;align-items:center}
+.ucaller .ic{font-size:34px;line-height:1}
+.ubadge{display:inline-block;font-family:var(--f-display);font-size:13px;background:#7a3cff;color:#fff;border-radius:999px;padding:1px 10px}
 .start-tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .view-note{font-size:12.5px;color:var(--muted)}
 .free-main{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,400px);gap:14px;align-items:start}
@@ -328,6 +344,10 @@ body.hard .mode-card{background:#3a2d47;color:var(--text);border-color:#000;box-
       <div class="pedestal">
         <canvas id="start-avatar"></canvas>
         <div class="stand" aria-hidden="true"></div>
+        <div class="row" role="group" aria-label="성별" style="justify-content:center">
+          <button class="chip" data-gender="m" aria-pressed="true">👦 남자</button>
+          <button class="chip" data-gender="f" aria-pressed="false">👧 여자</button>
+        </div>
       </div>
       <div>
         <span class="tag">6-2 · SPACE &amp; SOLIDS</span>
@@ -363,6 +383,7 @@ body.hard .mode-card{background:#3a2d47;color:var(--text);border-color:#000;box-
             <li>작업대를 끌면 건물이 돌아가요. 좌우로 끌면 빙글, 위아래로 끌면 위에서 내려다보거나 옆에서 보게 돼요. 돌려 보며 숨은 블록을 찾아요. <b>앞</b>·<b>옆</b> 표지판이 방향을 알려 줘요.</li>
             <li><b>납품하기</b>를 누르고 사용한 쌓기나무 개수까지 맞히면 보너스!</li>
             <li>번 코인으로 상점에서 모자, 옷, 소품, 블록 재료를 사요.</li>
+            <li>일하는 중에 <b>📞 긴급 전화</b>가 오면 <b>전화 받기</b>(F 키)를 눌러요. 쌓기나무 개수 세기, 앞·옆·위에서 본 모양 고르기 같은 짧은 문제를 시간 안에 풀면 보너스 코인을 받아요.</li>
             <li><b>저장 코드</b>를 적어 두면 다른 날, 다른 기기에서도 이어서 할 수 있어요.</li>
             <li><b>나만의 건물 건축하기</b>에서는 10×10 땅에 산 블록으로 마음껏 건물을 짓고(쌓기나무는 아래에 블록이 있어야 놓을 수 있어요), 내 건물을 세 가지 방법으로 직접 그려 맞혀 볼 수 있어요.</li>
           </ol>
@@ -394,6 +415,7 @@ body.hard .mode-card{background:#3a2d47;color:var(--text);border-color:#000;box-
         <canvas id="world" aria-label="마을 지도: 사무실, 작업장, 택배사"></canvas>
         <canvas id="build" aria-label="블록 작업대" hidden></canvas>
         <div class="warn" id="warn" hidden aria-live="assertive"></div>
+        <div class="urgent" id="urgent" hidden aria-live="polite"><span>📞 따르릉! <b>긴급 전화</b>가 왔어요</span><span class="left" id="urgent-left"></span><button class="btn sm" id="urgent-take">전화 받기 (F)</button></div>
         <div class="stage-tip" id="stage-tip">방향키·WASD로 걷기 · E/스페이스로 행동</div>
         <div class="blueprint" id="blueprint" hidden></div>
         <div id="world-ui">
@@ -649,7 +671,7 @@ const HARD_GROUND = {
 
 /* ================= 저장 ================= */
 const SAVE_KEY='block-architect-tycoon-v1';
-const DEF_EQUIP={hat:'none',shirt:'sky',acc:'none',block:'oak',skin:'#f6d2b3',hair:'#3b2a20',style:'short'};
+const DEF_EQUIP={hat:'none',shirt:'sky',acc:'none',block:'oak',skin:'#f6d2b3',hair:'#3b2a20',style:'short',gender:'m'};
 const S={coins:100,owned:['hat:none','shirt:sky','acc:none','block:oak'],equip:{...DEF_EQUIP},best:0};
 try{const raw=localStorage.getItem(SAVE_KEY);if(raw){const o=JSON.parse(raw);if(typeof o.coins==='number')S.coins=o.coins;if(Array.isArray(o.owned))S.owned=o.owned;S.equip={...DEF_EQUIP,...(o.equip||{})};S.best=o.best||0}}catch(e){}
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
@@ -680,14 +702,25 @@ const HATS=[
   {id:'cat',name:'고양이 귀',price:700},
   {id:'wizard',name:'마법사 모자',price:1500},
   {id:'crown',name:'황금 왕관',price:3000},
+  {id:'ribbon',name:'리본 머리띠',price:350,g:'f',nw:1},
+  {id:'cap',name:'파란 야구 모자',price:350,g:'m',nw:1},
 ];
 const SHIRTS=[
   {id:'sky',name:'하늘색 티셔츠',price:0},
   {id:'overall',name:'주황 작업복',price:300},
   {id:'hoodie',name:'초록 후드티',price:500},
   {id:'stripe',name:'줄무늬 티',price:600},
-  {id:'tux',name:'멋쟁이 턱시도',price:1500},
+  {id:'tux',name:'멋쟁이 턱시도',price:1500,g:'m'},
   {id:'rainbow',name:'무지개 옷',price:2500},
+  {id:'check',name:'빨간 체크 셔츠',price:400,g:'m',nw:1},
+  {id:'soccer',name:'축구 유니폼',price:800,g:'m',nw:1},
+  {id:'dress',name:'분홍 원피스',price:400,g:'f',nw:1},
+  {id:'jumper',name:'노란 멜빵치마',price:800,g:'f',nw:1},
+  {id:'gown',name:'반짝 드레스',price:1500,g:'f',nw:1},
+  {id:'bearpj',name:'곰돌이 잠옷',price:900,pj:1,nw:1},
+  {id:'bunnypj',name:'토끼 잠옷',price:900,pj:1,nw:1},
+  {id:'catpj',name:'고양이 잠옷',price:1000,pj:1,nw:1},
+  {id:'dinopj',name:'공룡 잠옷',price:1200,pj:1,nw:1},
 ];
 const ACCS=[
   {id:'none',name:'소품 없음',price:0},
@@ -717,9 +750,19 @@ function drawAvatar(cv,look,scale){
   if(look.shirt==='stripe'){shirt='#ffffff';pants='#2f3e64'}
   if(look.shirt==='tux'){shirt='#2b2b35';pants='#2b2b35';longSleeve=true}
   if(look.shirt==='rainbow'){shirt='#ff5a5a';pants='#6b6b8a';longSleeve=true}
+  if(look.shirt==='check'){shirt='#d9443c';pants='#3a4a6a';longSleeve=true}
+  if(look.shirt==='soccer'){shirt='#2d7ff9';pants='#ffffff'}
+  const PJ={bearpj:['#a0703f','#e8c9a0'],bunnypj:['#f4f0f2','#ffc2d1'],catpj:['#f2a541','#fff1d6'],dinopj:['#5cc04c','#ffe27a']}[look.shirt];
+  if(PJ){shirt=PJ[0];pants=PJ[0];longSleeve=true}
+  let skirt=null,skirtLen=5;
+  if(look.shirt==='dress'){shirt='#ff8fb8';skirt='#ff8fb8'}
+  if(look.shirt==='jumper'){shirt='#ffffff';skirt='#ffcf3f'}
+  if(look.shirt==='gown'){shirt='#9a6bff';skirt='#b48cff';skirtLen=9}
   if(look.shirtColor){shirt=look.shirtColor;pants=look.pantsColor||'#44506e';longSleeve=!!look.longSleeve}
   // 다리
-  P(O+4,25,pants,4,10);P(O+8,25,shade(pants,-18),4,10);P(O+4,35,'#4a3a3a',8,2);
+  if(skirt){P(O+5,25,skin,2,10);P(O+9,25,skin,2,10);P(O+5,33,'#ffffff',2,2);P(O+9,33,'#ffffff',2,2);P(O+4,35,'#c0406a',3,2);P(O+9,35,'#c0406a',3,2)}
+  else if(look.shirt==='soccer'){P(O+4,25,'#ffffff',8,4);P(O+4,29,skin,4,3);P(O+8,29,shade(skin,-10),4,3);P(O+4,31,'#2d7ff9',8,4);P(O+4,35,'#222',8,2)}
+  else{P(O+4,25,pants,4,10);P(O+8,25,shade(pants,-18),4,10);P(O+4,35,PJ?shade(PJ[0],-35):'#4a3a3a',8,2)}
   // 몸통
   P(O+4,13,shirt,8,12);
   // 팔
@@ -733,23 +776,50 @@ function drawAvatar(cv,look,scale){
   if(look.shirt==='stripe'){for(let r=13;r<25;r+=3){P(O+4,r,'#ff6b8b',8,1);P(O,r,'#ff6b8b',4,1);P(O+12,r,'#ff6b8b',4,1)}P(O,17,skin,4,8);P(O+12,17,skin,4,8)}
   if(look.shirt==='tux'){P(O+7,13,'#ffffff',2,12);P(O+6,13,'#e0443e',4,1);P(O+7,16,'#2b2b35',2,1);P(O+7,19,'#2b2b35',2,1)}
   if(look.shirt==='rainbow'){for(let r=0;r<6;r++){P(O+4,13+r*2,RAINBOW[r],8,2);P(O,13+r*2,RAINBOW[r],4,2);P(O+12,13+r*2,RAINBOW[r],4,2)}P(O,23,skin,4,2);P(O+12,23,skin,4,2)}
+  if(look.shirt==='check'){const dk='#8f2420';for(let r=13;r<25;r+=3){P(O+4,r,dk,8,1);P(O,r,dk,4,1);P(O+12,r,dk,4,1)}for(let c=1;c<16;c+=3)P(O+c,13,dk,1,10);P(O+6,13,'#fff',4,1)}
+  if(look.shirt==='soccer'){P(O+4,13,'#ffffff',8,1);P(O+7,16,'#ffffff',2,1);P(O+8,17,'#ffffff',1,3);P(O,16,'#ffffff',4,1);P(O+12,16,'#ffffff',4,1)}
+  if(PJ){P(O+5,16,PJ[1],6,8);P(O,23,skin,4,2);P(O+12,23,skin,4,2);
+    if(look.shirt==='dinopj'){P(O+5,16,'#ffe27a',6,8);for(let r=17;r<24;r+=2)P(O+5,r,'#e8c34a',6,1)}}
+  if(skirt){P(O+3,23,skirt,10,skirtLen);P(O+2,23+skirtLen-2,skirt,12,2);P(O+3,23+skirtLen-1,shade(skirt,-25),10,1);
+    if(look.shirt==='dress'){P(O+5,13,'#ffffff',6,1);P(O+7,14,'#ffffff',2,1)}
+    if(look.shirt==='jumper'){P(O+5,13,'#ffcf3f',1,10);P(O+10,13,'#ffcf3f',1,10);P(O+5,19,'#ffcf3f',6,4);P(O+7,24,'#ff6b8b',2,2)}
+    if(look.shirt==='gown'){P(O+4,13,'#b48cff',8,2);[[4,26],[9,28],[6,30],[11,25],[3,29]].forEach(([a,b])=>P(O+a,b,'#ffffff'))}}
+  // 여자 체형: 좁고 둥근 어깨, 가는 팔
+  const F=look.gender==='f';
+  if(F){const cl=(a,b,w,h)=>x.clearRect(a*scale,b*scale,w*scale,h*scale);
+    cl(O,13,1,13);cl(O+15,13,1,13);cl(O+1,13,1,1);cl(O+14,13,1,1);
+    P(O+4,19,shade(shirt,-14),1,2);P(O+11,19,shade(shirt,-14),1,2)}
   // 머리
   P(O+4,5,skin,8,8);
   P(O+4,5,hair,8,2);P(O+4,7,hair,1,1);P(O+11,7,hair,1,1);P(O+5,7,hair,1,1);
   if(look.style==='long'){P(O+4,7,hair,1,7);P(O+11,7,hair,1,7);P(O+3,8,hair,1,6);P(O+12,8,hair,1,6)}
   if(look.style==='spiky'){P(O+4,4,hair,1,1);P(O+6,4,hair,1,1);P(O+8,4,hair,1,1);P(O+10,4,hair,1,1)}
-  P(O+6,9,'#2b2440',1,2);P(O+9,9,'#2b2440',1,2);P(O+6,9,'#ffffff',1,1);P(O+9,9,'#ffffff',1,1);
-  P(O+5,11,'#ff9db0');P(O+10,11,'#ff9db0');P(O+7,11,'#b3564f',2,1);
+  if(look.style==='pony'){P(O+4,4,hair,8,1);P(O+12,5,'#ff7aa8',1,2);P(O+12,7,hair,2,7);P(O+13,8,shade(hair,-15),1,6)}
+  if(F&&look.style==='long'){P(O+3,6,hair,2,13);P(O+11,6,hair,2,13);P(O+4,5,hair,8,1);P(O+3,18,shade(hair,-15),2,1);P(O+11,18,shade(hair,-15),2,1)}
+  if(F){P(O+5,7,hair,3,1);P(O+4,6,hair,1,2)}
+  if(F){P(O+6,8.5,'#2b2440',1,2.5);P(O+9,8.5,'#2b2440',1,2.5);P(O+6,8.7,'#ffffff',.5,.6);P(O+9,8.7,'#ffffff',.5,.6)}
+  else{P(O+6,9,'#2b2440',1,2);P(O+9,9,'#2b2440',1,2);P(O+6,9,'#ffffff',1,1);P(O+9,9,'#ffffff',1,1)}
+  P(O+5,11,'#ff9db0');P(O+10,11,'#ff9db0');if(F){P(O+7,11.3,'#e0607a',2,.7);P(O+4.6,10.6,'#ffb3c4',1.2,.8);P(O+10.2,10.6,'#ffb3c4',1.2,.8)}else P(O+7,11,'#b3564f',2,1);
+  if(F&&look.hat==='none'&&!PJ&&look.style!=='pony'){P(O+10,5,'#ff7aa8',2,1);P(O+10.5,4.5,'#ffd1df',1,.5)}
   // 소품
   if(look.acc==='glasses'){const g='#3a3046';P(O+5,8,g,2,1);P(O+9,8,g,2,1);P(O+4,9,g,1,2);P(O+7,9,g,2,1);P(O+11,9,g,1,2);P(O+5,11,g,2,0.5);P(O+9,11,g,2,0.5)}
   if(look.acc==='scarf'){P(O+4,13,'#e0443e',8,2);P(O+9,15,'#e0443e',2,4);P(O+9,18,'#ffffff',2,1);P(O+5,13,'#ffffff',1,2)}
   if(look.acc==='pickaxe'){const br='#8a5a2b';for(let k=0;k<9;k++)P(O+14+Math.round(k*.5),26-k,br);const d='#5fe3e0',dd='#2aa6a8';P(O+15,17,d,1,1);P(O+16,16,d,3,1);P(O+19,17,d,1,1);P(O+20,18,dd,1,1);P(O+14,18,dd,1,1);P(O+16,15,dd,3,1)}
+  // 동물 잠옷 모자(후드)
+  if(PJ){const c=PJ[0],ci=PJ[1];P(O+3,4,c,10,2);P(O+3,4,c,1,10);P(O+12,4,c,1,10);P(O+4,6,c,1,1);P(O+11,6,c,1,1);
+    if(look.shirt==='bearpj'){P(O+3,2,c,3,2);P(O+10,2,c,3,2);P(O+4,3,ci);P(O+11,3,ci)}
+    if(look.shirt==='bunnypj'){P(O+5,0,c,2,4);P(O+9,0,c,2,4);P(O+5.5,.5,ci,1,3);P(O+9.5,.5,ci,1,3)}
+    if(look.shirt==='catpj'){P(O+3,2,c,2,2);P(O+3,1,c,1,1);P(O+11,2,c,2,2);P(O+12,1,c,1,1);P(O+7,4,'#d9822b',2,1)}
+    if(look.shirt==='dinopj'){[[5,3],[7,2],[9,3]].forEach(([a,b])=>{P(O+a,b,'#ffe27a',2,2)});P(O+6,6,'#ffffff');P(O+9,6,'#ffffff')}
+  }
   // 모자
-  const h=look.hat;
+  const h=PJ?'none':look.hat;
   if(h==='helmet'){const y='#ffd23f';P(O+4,2,y,8,4);P(O+3,6,y,10,1);P(O+5,2,'#fff1a8',2,1);P(O+7,2,'#e6b400',2,4)}
   if(h==='straw'){const s='#e8c46a';P(O+5,2,s,6,3);P(O+5,4,'#d1495b',6,1);P(O+2,5,s,12,1);P(O+2,6,shade(s,-30),12,0.5)}
   if(h==='cat'){P(O+4,3,hair,2,2);P(O+10,3,hair,2,2);P(O+5,4,'#ff9db0');P(O+10,4,'#ff9db0')}
   if(h==='wizard'){const w='#6c4ad6';P(O+7,0,w,2,1);P(O+6,1,w,4,1);P(O+6,2,w,4,1);P(O+5,3,w,6,1);P(O+4,4,w,8,1);P(O+3,5,w,10,1);P(O+7,3,'#ffd23f')}
+  if(h==='ribbon'){const r='#ff4f8b';P(O+4,5,r,8,1);P(O+9,3,r,2,2);P(O+12,3,r,2,2);P(O+11,4,'#c2185b')}
+  if(h==='cap'){const b='#2d6ff0';P(O+4,3,b,8,3);P(O+10,5,b,5,1);P(O+7,3,'#ffffff',2,1);P(O+4,5,shade(b,-30),8,.5)}
   if(h==='crown'){const g='#ffcc33';P(O+4,3,g,8,3);P(O+4,2,g);P(O+7,2,g,2,1);P(O+11,2,g);P(O+7,4,'#e8344a',2,1);P(O+5,4,'#3d7bff');P(O+10,4,'#3d7bff');P(O+4,5,'#d99a12',8,1)}
 }
 
@@ -1280,14 +1350,14 @@ function updateHud(){
   }else if(!warn.hidden)warn.hidden=true;
 }
 function tick(){
-  if(!G.running)return;updateHud();
+  if(!G.running)return;updateHud();urgentTick();
   if(!G.practice&&!G.pausedAt&&performance.now()>=G.endAt){endRound()}
 }
 function pause(){if(!G.pausedAt)G.pausedAt=performance.now()}
 function resume(){if(G.pausedAt){G.endAt+=performance.now()-G.pausedAt;G.pausedAt=0}}
 
 function startRound(){
-  G.hard=G.modeSel==='hard';setTheme(G.hard);G.running=true;G.practice=G.practiceSel;G.earned=0;G.jobs=[];G.theta=0;G.phi=PHI0;G.mode='place';G.hover=null;G.pausedAt=0;
+  G.hard=G.modeSel==='hard';setTheme(G.hard);G.running=true;G.practice=G.practiceSel;G.earned=0;G.jobs=[];G.urgDone=[];G.call=null;G.urgAt=(G.modeSel==='hard')?[rnd(35,55),rnd(85,105),rnd(135,155),rnd(185,205),rnd(232,250)]:[rnd(50,85),rnd(140,175),rnd(215,245)];G.theta=0;G.phi=PHI0;G.mode='place';G.hover=null;G.pausedAt=0;
   G.endAt=performance.now()+300*1000;
   $('#hud-mode').textContent=(G.hard?'🔥 어려움 모드':'쉬움 모드')+(G.practice?' · 연습':'');
   G.clients=[newClient(0),newClient(),newClient()];G.active=null;G.carry=false;
@@ -1300,16 +1370,16 @@ function startRound(){
   bgmStart();
 }
 function endRound(){
-  if(!G.running)return;G.running=false;$('#warn').hidden=true;G.lastWarn=null;BGM.fast=false;clearInterval(G.timer);closeModal();
+  if(!G.running)return;G.running=false;hangUp();$('#warn').hidden=true;G.lastWarn=null;BGM.fast=false;clearInterval(G.timer);closeModal();
   if(!G.practice)S.best=Math.max(S.best,G.earned);save();
   const e=G.earned;const rank=G.practice?'연습 완료!':e<500?'새싹 건축가':e<1500?'동네 건축가':e<4000?'마을 최고 건축가':'전설의 건축가';
-  const jl=G.jobs.map(j=>`<div><span>${j.who} · ${j.thing} ${'★'.repeat(j.diff+1)}</span><span class="num">${G.practice?'✓':'+'+j.pay}</span></div>`).join('')||'<div><span>완성한 의뢰가 없어요. 다음엔 한 건부터 도전해요!</span></div>';
+  const jl=[...G.jobs.map(j=>`<div><span>${j.who} · ${j.thing} ${'★'.repeat(j.diff+1)}</span><span class="num">${G.practice?'✓':'+'+j.pay}</span></div>`),...(G.urgDone||[]).map(u=>`<div><span>📞 긴급 미션 · ${u.who}</span><span class="num">${G.practice?'✓':'+'+u.pay}</span></div>`)].join('')||'<div><span>완성한 의뢰가 없어요. 다음엔 한 건부터 도전해요!</span></div>';
   $('#result').innerHTML=`
     <div class="title">${G.practice?"연습 끝!":"오늘의 영업 끝!"} · ${G.hard?"어려움 모드":"쉬움 모드"}</div>
     <canvas id="res-avatar"></canvas>
     <h2 class="rank">${rank}</h2>
     ${G.practice?"<p>연습 모드에서는 코인을 받지 않아요. 실전에서 도전해 보세요!</p>":`<div class="big"><span class="coin"></span><span class="num">${e}</span></div>`}
-    <div style="color:var(--muted)">완성한 의뢰 ${G.jobs.length}건 · 내 코인 ${S.coins} · 최고 기록 ${S.best}</div>
+    <div style="color:var(--muted)">완성한 의뢰 ${G.jobs.length}건 · 긴급 미션 ${(G.urgDone||[]).length}건 · 내 코인 ${S.coins} · 최고 기록 ${S.best}</div>
     <div class="joblist">${jl}</div>
     <div class="row" style="justify-content:center">
       <button class="btn primary big" id="res-again">한 번 더</button>
@@ -1445,7 +1515,11 @@ new ResizeObserver(()=>{if(!$('#scr-game').hidden&&G.phase==='build'){sizeCanvas
 
 /* ================= 상점 ================= */
 let shopTab='hat',shopReturn='scr-start';
-const TABS=[['hat','모자'],['shirt','옷'],['acc','소품'],['block','블록 재료'],['basic','머리·피부']];
+const TABS=[['hat','모자'],['shirt','옷·잠옷'],['acc','소품'],['block','블록 재료'],['basic','성별·머리·피부']];
+function setGender(g){
+  if(S.equip.gender!==g)S.equip.style=g==='f'?'long':'short';
+  S.equip.gender=g;save();
+}
 function openShop(ret){shopReturn=ret||'scr-start';setTheme(false);show('scr-shop');renderShop()}
 function renderShop(){
   $('#shop-coins').textContent=S.coins;
@@ -1457,12 +1531,17 @@ function renderShop(){
     const mk=(title,arr,key)=>{const sec=document.createElement('div');sec.className='card basic-sec';sec.innerHTML=`<h3>${title}</h3>`;const sw=document.createElement('div');sw.className='swatches';
       arr.forEach(col=>{const b=document.createElement('button');b.className='sw';b.style.background=col;b.setAttribute('aria-label',title+' '+col);b.setAttribute('aria-pressed',S.equip[key]===col);b.onclick=()=>{S.equip[key]=col;save();renderShop()};sw.appendChild(b)});
       sec.appendChild(sw);body.appendChild(sec)};
+    {const sec=document.createElement('div');sec.className='card basic-sec';sec.innerHTML='<h3>성별</h3><p class="view-note" style="margin:0">성별을 바꾸면 얼굴과 체형, 기본 머리 모양이 바뀌어요. 옷과 모자는 누구나 자유롭게 입을 수 있어요.</p>';
+      const row=document.createElement('div');row.className='row';
+      [['m','👦 남자'],['f','👧 여자']].forEach(([g,nm])=>{const b=document.createElement('button');b.className='chip';b.textContent=nm;b.setAttribute('aria-pressed',(S.equip.gender||'m')===g);b.onclick=()=>{setGender(g);renderShop()};row.appendChild(b)});
+      sec.appendChild(row);body.appendChild(sec)}
     mk('피부색 (무료)',SKINS,'skin');mk('머리색 (무료)',HAIRS,'hair');
     const sec=document.createElement('div');sec.className='card basic-sec';sec.innerHTML='<h3>머리 모양 (무료)</h3>';const row=document.createElement('div');row.className='row';
-    [['short','짧은 머리'],['spiky','삐죽 머리'],['long','긴 머리']].forEach(([id,nm])=>{const b=document.createElement('button');b.className='chip';b.textContent=nm;b.setAttribute('aria-pressed',S.equip.style===id);b.onclick=()=>{S.equip.style=id;save();renderShop()};row.appendChild(b)});
+    [['short','짧은 머리'],['spiky','삐죽 머리'],['long','긴 머리'],['pony','묶은 머리']].forEach(([id,nm])=>{const b=document.createElement('button');b.className='chip';b.textContent=nm;b.setAttribute('aria-pressed',S.equip.style===id);b.onclick=()=>{S.equip.style=id;save();renderShop()};row.appendChild(b)});
     sec.appendChild(row);body.appendChild(sec);return;
   }
-  const list=(shopTab==='hat'?HATS:shopTab==='shirt'?SHIRTS:shopTab==='acc'?ACCS:BLOCKS).slice().sort((a,b)=>a.price-b.price);
+  const gnd=S.equip.gender||'m';
+  const list=(shopTab==='hat'?HATS:shopTab==='shirt'?SHIRTS:shopTab==='acc'?ACCS:BLOCKS).sort((a,b)=>a.price-b.price);
   const grid=document.createElement('div');grid.className='items';
   list.forEach(it=>{
     const key=shopTab+':'+it.id;const owned=it.price===0||S.owned.includes(key);const eq=S.equip[shopTab]===it.id;
@@ -1470,7 +1549,7 @@ function renderShop(){
     const c=document.createElement('canvas');card.appendChild(c);
     if(shopTab==='block')blockIcon(c,it.id,84);
     else drawAvatar(c,{...S.equip,[shopTab]:it.id},2.4);
-    card.insertAdjacentHTML('beforeend',`<div class="nm">${it.name}</div><div class="pr">${it.price?`<span class="coin"></span>${it.price}`:'무료'}</div>`);
+    card.insertAdjacentHTML('beforeend',`${it.pj?'<div class="gtag pj">동물 잠옷</div>':''}<div class="nm">${it.name}</div><div class="pr">${it.price?`<span class="coin"></span>${it.price}`:'무료'}</div>`);
     const b=document.createElement('button');b.className='btn sm';
     if(eq){b.textContent='사용 중';b.disabled=true}
     else if(owned){b.textContent=shopTab==='block'?'이 블록 쓰기':'착용하기';b.onclick=()=>{S.equip[shopTab]=it.id;save();renderShop()}}
@@ -1498,9 +1577,11 @@ function goHome(){
   $('#start-coins').textContent=S.coins;
   $('#start-best').textContent=S.best?`· 최고 기록 ${S.best}`:'';
   drawAvatar($('#start-avatar'),S.equip,6);
+  document.querySelectorAll('[data-gender]').forEach(b=>b.setAttribute('aria-pressed',(S.equip.gender||'m')===b.dataset.gender));
   setTheme(G.modeSel==='hard');
   show('scr-start');
 }
+document.querySelectorAll('[data-gender]').forEach(b=>b.onclick=()=>{setGender(b.dataset.gender);goHome()});
 function setTheme(h){document.body.classList.toggle('hard',!!h)}
 document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{G.modeSel=b.dataset.mode;
   document.querySelectorAll('[data-mode]').forEach(x=>x.setAttribute('aria-pressed',x===b));setTheme(G.modeSel==='hard');
@@ -1577,17 +1658,20 @@ syncMusicButtons();
 
 /* ================= 저장 코드 ================= */
 const B32='0123456789ABCDEFGHJKMNPQRSTVWXYZ';
-const STYLES=['short','spiky','long'];
-const OWN_KEYS=[...HATS.map(x=>'hat:'+x.id),...SHIRTS.map(x=>'shirt:'+x.id),...ACCS.map(x=>'acc:'+x.id),...BLOCKS.map(x=>'block:'+x.id)];
+const STYLES=['short','spiky','long','pony'];
+const old_=x=>!x.nw,new_=x=>!!x.nw;
+const OWN_KEYS=[...HATS.filter(old_).map(x=>'hat:'+x.id),...SHIRTS.filter(old_).map(x=>'shirt:'+x.id),...ACCS.filter(old_).map(x=>'acc:'+x.id),...BLOCKS.map(x=>'block:'+x.id),
+  ...HATS.filter(new_).map(x=>'hat:'+x.id),...SHIRTS.filter(new_).map(x=>'shirt:'+x.id),...ACCS.filter(new_).map(x=>'acc:'+x.id)];
 const LAYOUTS=[
-  {salt:'BLKA-',ck:12,best:18,own:44,blockBits:5,len:24}, // 현재 (블록 27종, 24글자)
+  {salt:'BLKB-',ck:12,best:18,own:55,blockBits:5,len:28,eqBits:[4,5,3],gender:1}, // 현재 (의상·성별 추가, 28글자)
+  {salt:'BLKA-',ck:12,best:18,own:44,blockBits:5,len:24}, // 예전 코드도 읽기
   {salt:'BLK9-',ck:12,best:18,own:39,blockBits:5,len:24}, // 예전 코드도 읽기
   {salt:'BLK8-',ck:12,best:18,own:34,blockBits:5,len:24}, // 예전 코드도 읽기
   {salt:'BLK7-',ck:9,best:18,own:29,blockBits:4,len:20},  // 예전 코드도 읽기
   {salt:'BLK6-',ck:12,best:20,own:25,blockBits:3,len:20},
 ];
 function ckSum(n,L){let h=2166136261;const t=L.salt+n.toString();for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return h&((1<<L.ck)-1)}
-function eqList(L){return[['hat',HATS,3],['shirt',SHIRTS,3],['acc',ACCS,3],['block',BLOCKS,L.blockBits]]}
+function eqList(L){const e=L.eqBits||[3,3,3];return[['hat',HATS,e[0]],['shirt',SHIRTS,e[1]],['acc',ACCS,e[2]],['block',BLOCKS,L.blockBits]]}
 function makeCode(){
   const L=LAYOUTS[0];
   let n=0n;const put=(v,b)=>{v=Math.max(0,Math.min(Math.floor(v)||0,2**b-1));n=(n<<BigInt(b))|BigInt(v)};
@@ -1595,24 +1679,26 @@ function makeCode(){
   let bits=0;OWN_KEYS.slice(0,L.own).forEach((k,i)=>{if(S.owned.includes(k))bits+=2**i});put(bits,L.own);
   eqList(L).forEach(([key,list,b])=>put(Math.max(0,list.findIndex(x=>x.id===S.equip[key])),b));
   put(Math.max(0,SKINS.indexOf(S.equip.skin)),2);put(Math.max(0,HAIRS.indexOf(S.equip.hair)),3);put(Math.max(0,STYLES.indexOf(S.equip.style)),2);
+  if(L.gender)put(S.equip.gender==='f'?1:0,1);
   n=(n<<BigInt(L.ck))|BigInt(ckSum(n,L));
   let out='';for(let i=0;i<L.len;i++){out=B32[Number(n&31n)]+out;n>>=5n}
   return out.match(/.{4}/g).join('-');
 }
 function readCode(str){
   str=String(str||'').toUpperCase().replace(/[\s-]/g,'').replace(/O/g,'0').replace(/[IL]/g,'1').replace(/U/g,'V');
-  if(str.length!==20&&str.length!==24)return null;
+  if(![20,24,28].includes(str.length))return null;
   let n0=0n;for(const ch of str){const v=B32.indexOf(ch);if(v<0)return null;n0=(n0<<5n)|BigInt(v)}
   for(const L of LAYOUTS){
     if(L.len!==str.length)continue;
     let n=n0;const ck=Number(n&BigInt((1<<L.ck)-1));n>>=BigInt(L.ck);if(ckSum(n,L)!==ck)continue;
     const take=b=>{const v=Number(n&((1n<<BigInt(b))-1n));n>>=BigInt(b);return v};
     const EQL=eqList(L);
+    const gender=L.gender?take(1):0;
     const style=take(2),hair=take(3),skin=take(2),eqv=EQL.slice().reverse().map(e=>take(e[2])).reverse(),bits=take(L.own),best=take(L.best),coins=take(24);
     const owned=OWN_KEYS.slice(0,L.own).filter((k,i)=>Math.floor(bits/2**i)%2===1);
     const equip={...DEF_EQUIP};
     EQL.forEach(([key,list],i)=>{const it=list[eqv[i]];if(it)equip[key]=it.id});
-    equip.skin=SKINS[skin]||DEF_EQUIP.skin;equip.hair=HAIRS[hair]||DEF_EQUIP.hair;equip.style=STYLES[style]||DEF_EQUIP.style;
+    equip.skin=SKINS[skin]||DEF_EQUIP.skin;equip.hair=HAIRS[hair]||DEF_EQUIP.hair;equip.style=STYLES[style]||DEF_EQUIP.style;equip.gender=gender?'f':'m';
     return {coins,best,owned,equip};
   }
   return null;
@@ -1638,8 +1724,8 @@ function showSaveCode(){
 function showLoadCode(){
   openModal(`
     <h2>📂 불러오기</h2>
-    <p><b>💾 저장</b>을 눌러 받아 둔 저장 코드(24글자, 예전 코드는 20글자)를 아래 칸에 넣고 <b>불러오기</b>를 눌러요. 빼기(-)는 넣지 않아도 되고, 소문자로 써도 괜찮아요.</p>
-    <input class="codein" id="code-in" autocomplete="off" spellcheck="false" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" aria-label="저장 코드">
+    <p><b>💾 저장</b>을 눌러 받아 둔 저장 코드(28글자, 예전 코드는 20·24글자)를 아래 칸에 넣고 <b>불러오기</b>를 눌러요. 빼기(-)는 넣지 않아도 되고, 소문자로 써도 괜찮아요.</p>
+    <input class="codein" id="code-in" autocomplete="off" spellcheck="false" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" aria-label="저장 코드">
     <div class="err" id="code-err" aria-live="polite"></div>
     <p class="view-note">불러오면 지금 이 기기의 코인(${S.coins})과 꾸민 모습이 코드의 내용으로 바뀌어요.</p>
     <div class="row" style="justify-content:center">
@@ -1885,7 +1971,7 @@ function avatarCanvas(look,key){if(imgCache[key])return imgCache[key];const c=do
 function playerImg(){return avatarCanvas(S.equip,'me:'+JSON.stringify(S.equip))}
 function npcImg(c){const p=c.p;if(c.img)return c.img;
   const style=p.hairStyle==='long'||p.hairStyle==='bob'||p.hairStyle==='bun'?'long':p.hairStyle==='spiky'?'spiky':'short';
-  const look={skin:p.skin,hair:p.hairColor,style,shirt:'sky',shirtColor:p.shirt,pantsColor:p.grp==='elder'?'#6b6458':'#44506e',hat:p.hairStyle==='cap'?'helmet':'none',acc:p.glasses?'glasses':'none'};
+  const look={gender:p.gender==='f'?'f':'m',skin:p.skin,hair:p.hairColor,style,shirt:'sky',shirtColor:p.shirt,pantsColor:p.grp==='elder'?'#6b6458':'#44506e',hat:p.hairStyle==='cap'?'helmet':'none',acc:p.glasses?'glasses':'none'};
   const cv2=document.createElement('canvas');drawAvatar(cv2,look,4);return c.img=cv2}
 function courierImg(){return avatarCanvas({skin:'#eab68c',hair:'#2d2118',style:'short',shirt:'sky',shirtColor:'#8a5a2b',pantsColor:'#5a3a1e',hat:'none',acc:'none'},'courier')}
 const LABELS=[{x:4.5,z:14,y:1.2,text:'🏢 사무실'},{x:6.5,z:.6,y:1.2,text:'🔨 작업장'},{x:16.5,z:10.2,y:1.4,text:'📦 택배사'},{x:7.5,z:7.5,y:2.4,text:'🚪 뒷문',bg:'rgba(255,240,200,.95)'}];
@@ -1895,19 +1981,35 @@ function inputDir(){let x=INPUT.pad[0],y=INPUT.pad[1];const K=INPUT.keys;
   if(!x&&!y)return null;const m=Math.hypot(x,y);return[x/m,y/m]}
 function canStand(env,Wk,x,z){const r=.27;for(const [ox,oz] of [[-r,-r],[r,-r],[-r,r],[r,r]]){const i=Math.floor(x+ox),j=Math.floor(z+oz);
   if(i<0||j<0||i>=env.w||j>=env.d)return false;if(env.blocked(i,j))return false;if(env.h(i,j)-Wk.y>env.step)return false}return true}
+// 앞쪽 가장자리만 검사: 이미 벽에 살짝 닿아 있어도 반대 방향으로는 항상 빠져나올 수 있음
+function edgeOk(env,Wk,nx,nz,ax,az){
+  const r=.26,pts=[];
+  if(ax)pts.push([nx+ax*r,nz-r],[nx+ax*r,nz+r]);
+  if(az)pts.push([nx-r,nz+az*r],[nx+r,nz+az*r]);
+  // 몸의 가운데가 들어갈 칸은 반드시 올라설 수 있어야 함
+  {const ci=Math.floor(nx),cj=Math.floor(nz);if(ci<0||cj<0||ci>=env.w||cj>=env.d)return false;
+   if(env.blocked(ci,cj)&&!(ci===Math.floor(Wk.x)&&cj===Math.floor(Wk.z)))return false;
+   if(env.h(ci,cj)-Wk.y>env.step)return false}
+  // 이미 몸이 걸쳐 있는 칸은 다시 검사하지 않음 → 계단을 내려온 뒤에도 끼지 않음
+  const inNow=(i,j)=>i>=Math.floor(Wk.x-r)&&i<=Math.floor(Wk.x+r)&&j>=Math.floor(Wk.z-r)&&j<=Math.floor(Wk.z+r);
+  for(const [px,pz] of pts){const i=Math.floor(px),j=Math.floor(pz);
+    if(i<0||j<0||i>=env.w||j>=env.d)return false;
+    if(inNow(i,j))continue;
+    if(env.blocked(i,j))return false;if(env.h(i,j)-Wk.y>env.step)return false}
+  return true;
+}
 function stepWalker(Wk,env,dir,dt,theta,phi){
+  // 내가 서 있는 칸에 블록이 쌓이면 그 위로 올라섬
+  const hc=env.h(Math.floor(Wk.x),Math.floor(Wk.z));if(hc<99&&hc>Wk.y)Wk.y=hc;
   if(!dir){Wk.bob=0;return false}
   const spn=Math.max(.3,Math.sin(phi)),co=Math.cos(theta),si=Math.sin(theta);
   const pp=dir[0],qq=dir[1]/spn,u=(pp+qq)*Math.SQRT1_2,v=(qq-pp)*Math.SQRT1_2;
   let dx=u*co+v*si,dz=-u*si+v*co;const m=Math.hypot(dx,dz)||1;dx/=m;dz/=m;
   const st=4.4*dt;
-  const ox=Wk.x,oz=Wk.z;
-  if(canStand(env,Wk,Wk.x+dx*st,Wk.z))Wk.x+=dx*st;
-  if(canStand(env,Wk,Wk.x,Wk.z+dz*st))Wk.z+=dz*st;
-  if(Wk.x===ox&&Wk.z===oz){ // 모서리에 걸리면 칸 가운데 쪽으로 살짝 밀어 줌
-    const cx=Math.floor(Wk.x)+.5,cz=Math.floor(Wk.z)+.5,tx=Wk.x+(cx-Wk.x)*.25,tz=Wk.z+(cz-Wk.z)*.25;
-    if(canStand(env,{y:env.h(Math.floor(tx),Math.floor(tz))},tx,tz)){Wk.x=tx;Wk.z=tz}}
-  Wk.y=env.h(Math.floor(Wk.x),Math.floor(Wk.z));
+  if(Math.abs(dx)>1e-3&&edgeOk(env,Wk,Wk.x+dx*st,Wk.z,Math.sign(dx),0))Wk.x+=dx*st;
+  if(Math.abs(dz)>1e-3&&edgeOk(env,Wk,Wk.x,Wk.z+dz*st,0,Math.sign(dz)))Wk.z+=dz*st;
+  Wk.x=Math.max(.27,Math.min(env.w-.27,Wk.x));Wk.z=Math.max(.27,Math.min(env.d-.27,Wk.z));
+  const nh=env.h(Math.floor(Wk.x),Math.floor(Wk.z));if(nh<99)Wk.y=nh;
   if(Math.abs(dir[0])>.1)Wk.flip=dir[0]<0;
   Wk.t=(Wk.t||0)+dt;Wk.bob=Math.abs(Math.sin(Wk.t*11))*.08;return true;
 }
@@ -2010,19 +2112,112 @@ requestAnimationFrame(frame);
 G.phase='world';
 
 function unstuck(){
-  const ci=Math.floor(CP.x),cj=Math.floor(CP.z);const H=(i,j)=>FENV.h(i,j);
-  const open=(i,j)=>{if(i<0||j<0||i>=FN||j>=FN||H(i,j)!==0)return false;let free=0;for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]])if(H(i+a,j+b)===0)free++;return free>=2};
-  // 가장 가까운 빈 땅 중에서, 화면 앞쪽(건물에 가려지지 않는 쪽)을 고름
-  let best=null,bestScore=-1e9;const co=Math.cos(FB.theta),si=Math.sin(FB.theta);
-  for(let r=1;r<FN&&!best;r++){
-    for(let dj=-r;dj<=r;dj++)for(let di=-r;di<=r;di++){if(Math.max(Math.abs(di),Math.abs(dj))!==r)continue;
-      if(!open(ci+di,cj+dj))continue;const sc=di*(co+si)+dj*(co-si);if(sc>bestScore){bestScore=sc;best=[ci+di,cj+dj]}}
+  // 빈 땅이 없어도 반드시 갈 곳을 찾음: 낮고, 주변으로 걸어 나갈 수 있고, 가까운 칸을 고름 (블록 위도 가능)
+  const ci=Math.floor(CP.x),cj=Math.floor(CP.z),H=(i,j)=>FB.build[j*FN+i];
+  const co=Math.cos(FB.theta),si=Math.sin(FB.theta);
+  let best=null,bs=-1e9;
+  for(let j=0;j<FN;j++)for(let i=0;i<FN;i++){
+    if(i===ci&&j===cj)continue;
+    const h=H(i,j);let walk=0;
+    for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const x=i+a,z=j+b;if(x<0||z<0||x>=FN||z>=FN)continue;if(H(x,z)-h<=1)walk++}
+    const sc=(h===0?60:0)-h*4+walk*12-Math.hypot(i-ci,j-cj)*3+((i-ci)*(co+si)+(j-cj)*(co-si))*.5;
+    if(sc>bs){bs=sc;best=[i,j,h]}
   }
-  if(!best){toast('빈 땅을 찾지 못했어요. 블록을 조금 치워 주세요');return}
-  CP.x=best[0]+.5;CP.z=best[1]+.5;CP.y=0;FB.cam.cx=CP.x;FB.cam.cz=CP.z;renderFree();beep(880,.06);beep(1320,.08,'square',.04,.06);
-  toast('🧭 가까운 빈 땅으로 이동했어요');
+  if(!best)return;
+  CP.x=best[0]+.5;CP.z=best[1]+.5;CP.y=best[2];renderFree();beep(880,.06);beep(1320,.08,'square',.04,.06);
+  toast(best[2]===0?'🧭 가까운 빈 땅으로 이동했어요':`🧭 빈 땅이 없어서 ${best[2]}층 블록 위로 올려 줬어요`);
 }
 $('#f-unstuck').onclick=unstuck;
+
+/* ================= 긴급 미션 (전화) ================= */
+const CALLERS=[
+  {ic:'🚚',who:'자재 트럭 기사님'},{ic:'🏗️',who:'현장 감독님'},{ic:'📋',who:'사무실 비서님'},{ic:'🏫',who:'학교 선생님'},{ic:'🧑‍🚒',who:'소방서 대장님'},{ic:'👵',who:'옆집 할머니'}];
+function smallBuild(){
+  const w=rnd(2,3),d=rnd(2,3),H=G.hard?3:2+(Math.random()<.5?1:0),h=new Array(w*d).fill(0);
+  const N=w*d;let tries=0;
+  do{for(let n=0;n<N;n++)h[n]=Math.random()<.8?rnd(1,H):0;tries++}while((sum(h)<3||h.filter(v=>v).length<2||Math.max(...h)<2)&&tries<50);
+  if(Math.max(...h)<2)h[0]=2;if(!h[0]&&!h[N-1])h[0]=1;
+  return {w,d,H:Math.max(...h),h};
+}
+function makeUrgent(){
+  const caller=pick(CALLERS),b=smallBuild(),{w,d,h}=b,n=sum(h);
+  const kinds=['count3d','numsum','pickfront','pickside','picktop'];const kind=pick(kinds);
+  const numOpts=()=>{const set=new Set([n]);const cand=[n-2,n-1,n+1,n+2,n+3].filter(v=>v>0);while(set.size<4&&cand.length)set.add(cand.splice(Math.floor(Math.random()*cand.length),1)[0]);return [...set].sort(()=>Math.random()-.5).map(v=>({v,ok:v===n}))};
+  const v=computeViews(h,w,d);
+  const gridOpts=(arr,mutate,eqf)=>{const opts=[arr.slice()];let guard=0;
+    while(opts.length<3&&guard++<200){const m=mutate(arr.slice());if(m&&!opts.some(o=>eqf(o,m)))opts.push(m)}
+    return opts.map((o,i)=>({g:o,ok:i===0})).sort(()=>Math.random()-.5)};
+  const heightMut=a=>{const i=rnd(0,a.length-1);const nv=a[i]+(Math.random()<.5?-1:1);if(nv<1||nv>b.H+1)return null;a[i]=nv;return a};
+  const topMut=a=>{const i=rnd(0,a.length-1);a[i]=a[i]?0:1;if(!a.some(x=>x))return null;return a};
+  const U={caller,b,kind,started:performance.now(),limit:G.hard?25:20,reward:G.hard?400:150};
+  if(kind==='count3d'){U.ask=`방금 내려놓은 쌓기나무가 모두 몇 개인지 세어 주세요!`;U.story='트럭에서 쌓기나무를 내렸는데 개수가 맞는지 모르겠어요.';U.opts=numOpts()}
+  if(kind==='numsum'){U.ask=`설계도대로 지으려면 쌓기나무가 모두 몇 개 필요할까요?`;U.story='위에서 본 모양에 쌓을 개수를 적은 설계도를 보냈어요.';U.opts=numOpts()}
+  if(kind==='pickfront'){U.ask=`이 건물을 <b>앞</b>에서 보면 어떤 모양일까요?`;U.story='손님이 앞에서 본 모양을 급하게 알고 싶대요.';U.opts=gridOpts(v.front,heightMut,eqArr);U.cols=w}
+  if(kind==='pickside'){U.ask=`이 건물을 <b>옆</b>(오른쪽)에서 보면 어떤 모양일까요?`;U.story='옆에서 본 모양을 간판에 그려야 해요.';U.opts=gridOpts(v.side,heightMut,eqArr);U.cols=d}
+  if(kind==='picktop'){U.ask=`이 건물을 <b>위</b>에서 보면 어떤 모양일까요?`;U.story='드론으로 위에서 사진을 찍으려고 해요.';U.opts=gridOpts(v.top,topMut,eqArr)}
+  return U;
+}
+function urgentTick(){
+  if(!G.running)return;
+  const left=(G.endAt-performance.now())/1000,elapsed=300-left;
+  if(G.call&&G.call.state==='ring'){
+    const r=Math.ceil((G.call.until-performance.now())/1000);
+    if(r<=0){toast(`📞 ${G.call.caller.who}의 전화를 놓쳤어요`,'bad');hangUp();return}
+    $('#urgent-left').textContent=`${r}초`;
+    if(!G.call.lastRing||performance.now()-G.call.lastRing>1600){G.call.lastRing=performance.now();[0,.12,.24,.36].forEach(t=>beep(1250,.07,'square',.035,t))}
+    return;
+  }
+  if(G.call||!G.urgAt.length||!$('#modal').hidden)return;
+  if(!G.practice&&left<40){G.urgAt=[];return}
+  if(elapsed>=G.urgAt[0]){G.urgAt.shift();G.call=makeUrgent();G.call.state='ring';G.call.until=performance.now()+15000;$('#urgent').hidden=false}
+}
+function hangUp(){G.call=null;$('#urgent').hidden=true;clearInterval(G.callTimer)}
+function takeCall(){
+  const U=G.call;if(!U||U.state!=='ring'||!$('#modal').hidden||!G.running)return;
+  U.state='open';U.started=performance.now();$('#urgent').hidden=true;beep(660,.06);
+  const bonus=G.practice?'연습이라 코인은 없어요':`성공하면 <span class="coin"></span> ${U.reward} (8초 안에 맞히면 +50%)`;
+  const isNum=U.kind==='count3d'||U.kind==='numsum';
+  openModal(`
+    <div class="mtime" id="m-time"></div>
+    <span class="ubadge">📞 긴급 미션</span>
+    <div class="ucaller"><span class="ic">${U.caller.ic}</span><div><b style="font-family:var(--f-display);font-size:18px">${U.caller.who}</b><div class="view-note">${U.story}</div></div></div>
+    <div class="goal">${U.ask}</div>
+    ${U.kind==='numsum'?'<div class="views" id="u-fig" style="justify-content:center"></div>':'<div class="mini-stage"><canvas id="u-scene" aria-label="긴급 미션 건물"></canvas><span class="mini-tip">끌어서 돌려 보세요</span></div>'}
+    <div class="ubar"><i id="u-bar" style="width:100%"></i></div>
+    <div class="uchoices" id="u-choices"></div>
+    <div class="view-note" style="text-align:center">${bonus}</div>`);
+  if(U.kind==='numsum'){const fig=viewFig('위에서 본 모양 (수 = 쌓을 개수)',c=>drawGraph(c,U.b.w,U.b.d,(cc,r)=>U.b.h[r*U.b.w+cc],{cs:34,numbers:true}));$('#u-fig').appendChild(fig)}
+  else{const sc=$('#u-scene');sizeCanvas(sc);let th=-.35,ph=PHI0;const obj={m:{w:U.b.w,d:U.b.d},build:U.b.h};
+    const draw=()=>drawScene(sc,obj,th,{phi:ph,topPad:22,fitH:Math.max(2,U.b.H),ground:G.hard?HARD_GROUND:GROUND});
+    attachDrag(sc,{start:()=>({t:th,p:ph}),drag:(s0,dx,dy)=>{const o=orbit(s0,dx,dy);th=o.t;ph=o.p;draw()}});draw()}
+  const box=$('#u-choices');
+  U.opts.forEach((o,i)=>{const b=document.createElement('button');b.className='btn';
+    if(isNum)b.textContent=o.v;
+    else{const c=document.createElement('canvas');const cs=18;
+      if(U.kind==='picktop')drawGraph(c,U.b.w,U.b.d,(cc,r)=>o.g[r*U.b.w+cc],{cs});
+      else{const R=Math.max(...U.opts.map(z=>Math.max(...z.g)));drawGraph(c,U.cols,R,(cc,r)=>o.g[cc]>=R-r?1:0,{cs})}
+      b.appendChild(c);b.insertAdjacentHTML('beforeend',`<span style="font-size:14px">${'①②③④'[i]}</span>`)}
+    b.onclick=()=>answerCall(i);box.appendChild(b)});
+  clearInterval(G.callTimer);
+  G.callTimer=setInterval(()=>{if(!G.call||G.call!==U){clearInterval(G.callTimer);return}
+    const k=1-(performance.now()-U.started)/(U.limit*1000);const bar=$('#u-bar');if(bar)bar.style.width=Math.max(0,k*100)+'%';
+    if(k<=0)answerCall(-1)},100);
+}
+function answerCall(i){
+  const U=G.call;if(!U||U.state!=='open')return;U.state='done';clearInterval(G.callTimer);
+  const secs=(performance.now()-U.started)/1000,ok=i>=0&&U.opts[i].ok;
+  document.querySelectorAll('#u-choices .btn').forEach((b,k)=>{b.disabled=true;if(U.opts[k].ok)b.classList.add('right');else if(k===i)b.classList.add('wrongc')});
+  let msg;
+  if(ok){const pay=G.practice?0:U.reward+(secs<=8?Math.round(U.reward*.5/10)*10:0);
+    if(!G.practice){G.earned+=pay;S.coins+=pay;save()}
+    G.urgDone.push({who:U.caller.who,pay});SFX.good();if(!G.practice)setTimeout(()=>SFX.coin(),250);
+    msg=`<p class="pos" style="font-family:var(--f-display);font-size:20px;margin:0">정답! ${G.practice?'(연습이라 코인 없음)':`<span class="coin"></span> +${pay}`}${!G.practice&&secs<=8?' · 번개 보너스!':''}</p>`;
+  }else{SFX.bad();const right=U.opts.find(o=>o.ok);msg=`<p class="neg" style="font-family:var(--f-display);font-size:18px;margin:0">${i<0?'시간이 다 됐어요!':'아쉬워요!'} 초록색이 정답이에요${right.v!=null?` (${right.v}개)`:''}.</p>`}
+  $('#u-choices').insertAdjacentHTML('afterend',msg+'<button class="btn primary" id="u-close">일하러 돌아가기</button>');
+  $('#u-close').onclick=()=>{hangUp();closeModal();refreshAll()};$('#u-close').focus();
+}
+$('#urgent-take').onclick=takeCall;
+document.addEventListener('keydown',e=>{if((e.key==='f'||e.key==='F')&&G.call&&G.call.state==='ring'&&!$('#scr-game').hidden){e.preventDefault();takeCall()}});
 
 goHome();
 })();
